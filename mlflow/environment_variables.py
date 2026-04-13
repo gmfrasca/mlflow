@@ -1039,6 +1039,46 @@ MLFLOW_TRACING_SQL_WAREHOUSE_ID = _EnvironmentVariable("MLFLOW_TRACING_SQL_WAREH
 #: (default: ``None`` (an active MLflow experiment will be used))
 MLFLOW_TRACING_DESTINATION = _EnvironmentVariable("MLFLOW_TRACING_DESTINATION", str, None)
 
+#######################################################################################
+# Trace Archival
+#######################################################################################
+
+#: Destination URI for the archival repository where archived trace span data is stored.
+#: Supports the same backends as artifact storage (S3, GCS, Azure Blob, local filesystem).
+#: Can be overridden per workspace via the workspace's trace_archival_location field.
+#: (default: ``None`` -- falls back to the server's effective artifact storage location)
+MLFLOW_TRACE_ARCHIVAL_LOCATION = _EnvironmentVariable("MLFLOW_TRACE_ARCHIVAL_LOCATION", str, None)
+
+#: Server-level default trace archival retention expressed as <number><unit>
+#: where unit is m (minutes), h (hours), or d (days). Traces older than this
+#: threshold are eligible for archival. When unset, no automatic archival occurs.
+#: (default: ``None``)
+MLFLOW_TRACE_ARCHIVAL_RETENTION = _EnvironmentVariable(
+    "MLFLOW_TRACE_ARCHIVAL_RETENTION", str, None
+)
+
+#: How often the trace archival scheduler runs, in minutes.
+#: (default: ``5``)
+MLFLOW_TRACE_ARCHIVAL_SCHEDULER_INTERVAL = _EnvironmentVariable(
+    "MLFLOW_TRACE_ARCHIVAL_SCHEDULER_INTERVAL", int, 5
+)
+
+#: Enables the trace archival scheduler on the current MLflow instance.
+#: Set to false in multi-replica deployments for replicas that should not run archival.
+#: (default: ``True``)
+MLFLOW_ENABLE_TRACE_ARCHIVAL_SCHEDULER = _BooleanEnvironmentVariable(
+    "MLFLOW_ENABLE_TRACE_ARCHIVAL_SCHEDULER", True
+)
+
+#: Comma-separated list of experiment IDs whose experiment-level archival retention may
+#: exceed the broader-scope (server or workspace) retention. Experiments not in this list
+#: that request a longer retention will use the broader-scope value instead.
+#: Changing this value requires a server restart.
+#: (default: ``None`` -- no experiments are allowlisted)
+MLFLOW_TRACE_ARCHIVAL_LONG_RETENTION_ALLOWLIST = _EnvironmentVariable(
+    "MLFLOW_TRACE_ARCHIVAL_LONG_RETENTION_ALLOWLIST", str, None
+)
+
 
 #######################################################################################
 # Model Logging
