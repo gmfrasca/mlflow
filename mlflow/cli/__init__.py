@@ -533,6 +533,13 @@ def _validate_static_prefix(ctx, param, value):
     "Traces older than this are eligible for archival by the server-owned scheduler. "
     "Example: '30d'. When unset, no automatic archival occurs.",
 )
+@click.option(
+    "--enable-trace-archival-scheduler/--disable-trace-archival-scheduler",
+    default=True,
+    show_default=True,
+    help="Enable or disable the trace archival scheduler on this instance. "
+    "Disable on replicas that should not run archival in multi-replica deployments.",
+)
 def server(
     ctx,
     backend_store_uri,
@@ -561,6 +568,7 @@ def server(
     enable_workspaces,
     trace_archival_location,
     trace_archival_retention,
+    enable_trace_archival_scheduler,
 ):
     """
     Run the MLflow tracking server with built-in security middleware.
@@ -634,6 +642,11 @@ def server(
         # Attempt to parse the duration; this will fail fast by raising an exception if the
         # duration is invalid; the raw string is passed to workers via env var.
         parse_duration(trace_archival_retention)
+
+    # Sync the scheduler flag to env so the Huey periodic-tasks consumer inherits it
+    os.environ["MLFLOW_ENABLE_TRACE_ARCHIVAL_SCHEDULER"] = (
+        "true" if enable_trace_archival_scheduler else "false"
+    )
 
     if disable_security_middleware:
         os.environ["MLFLOW_SERVER_DISABLE_SECURITY_MIDDLEWARE"] = "true"

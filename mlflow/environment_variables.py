@@ -1057,6 +1057,19 @@ MLFLOW_TRACE_ARCHIVAL_RETENTION = _EnvironmentVariable(
     "MLFLOW_TRACE_ARCHIVAL_RETENTION", str, None
 )
 
+#: How often the trace archival scheduler runs, in minutes.
+#: (default: ``5``)
+MLFLOW_TRACE_ARCHIVAL_SCHEDULER_INTERVAL = _EnvironmentVariable(
+    "MLFLOW_TRACE_ARCHIVAL_SCHEDULER_INTERVAL", int, 5
+)
+
+#: Enables the trace archival scheduler on the current MLflow instance.
+#: Set to false in multi-replica deployments for replicas that should not run archival.
+#: (default: ``True``)
+MLFLOW_ENABLE_TRACE_ARCHIVAL_SCHEDULER = _BooleanEnvironmentVariable(
+    "MLFLOW_ENABLE_TRACE_ARCHIVAL_SCHEDULER", True
+)
+
 #: Comma-separated list of experiment IDs whose experiment-level archival retention may
 #: exceed the broader-scope (server or workspace) retention. Experiments not in this list
 #: that request a longer retention will use the broader-scope value instead.
