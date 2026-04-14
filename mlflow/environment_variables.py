@@ -1175,6 +1175,33 @@ MLFLOW_USE_BATCH_SPAN_PROCESSOR = _BooleanEnvironmentVariable(
     "MLFLOW_USE_BATCH_SPAN_PROCESSOR", True
 )
 
+#######################################################################################
+# Trace Archival
+#######################################################################################
+
+#: Destination URI for the archival repository where archived trace span data is stored.
+#: Supports the same backends as artifact storage (S3, GCS, Azure Blob, local filesystem).
+#: Can be overridden per workspace via the workspace's trace_archival_location field.
+#: (default: ``None`` -- falls back to the server's effective artifact storage location)
+MLFLOW_TRACE_ARCHIVAL_LOCATION = _EnvironmentVariable("MLFLOW_TRACE_ARCHIVAL_LOCATION", str, None)
+
+#: Server-level default trace archival retention expressed as <number><unit>
+#: where unit is m (minutes), h (hours), or d (days). Traces older than this
+#: threshold are eligible for archival. When unset, no automatic archival occurs.
+#: (default: ``None``)
+MLFLOW_TRACE_ARCHIVAL_RETENTION = _EnvironmentVariable(
+    "MLFLOW_TRACE_ARCHIVAL_RETENTION", str, None
+)
+
+#: Comma-separated list of experiment IDs whose experiment-level archival retention may
+#: exceed the broader-scope (server or workspace) retention. Experiments not in this list
+#: that request a longer retention will use the broader-scope value instead.
+#: Changing this value requires a server restart.
+#: (default: ``None`` -- no experiments are allowlisted)
+MLFLOW_TRACE_ARCHIVAL_LONG_RETENTION_ALLOWLIST = _EnvironmentVariable(
+    "MLFLOW_TRACE_ARCHIVAL_LONG_RETENTION_ALLOWLIST", str, None
+)
+
 
 #######################################################################################
 # Model Logging
