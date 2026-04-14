@@ -19,6 +19,13 @@ ARTIFACT_ROOT_ENV_VAR = "_MLFLOW_SERVER_ARTIFACT_ROOT"
 # Destination for proxied artifact storage operations (used with --serve-artifacts)
 ARTIFACTS_DESTINATION_ENV_VAR = "_MLFLOW_SERVER_ARTIFACT_DESTINATION"
 
+# Trace archival configuration
+# URI for the archival repository where archived trace span data is stored
+TRACE_ARCHIVAL_LOCATION_ENV_VAR = "_MLFLOW_SERVER_TRACE_ARCHIVAL_LOCATION"
+
+# Server-level default retention duration for trace archival (e.g. "30d", "12h")
+TRACE_ARCHIVAL_RETENTION_ENV_VAR = "_MLFLOW_SERVER_TRACE_ARCHIVAL_RETENTION"
+
 # Server features
 # Whether the server should act as an artifact proxy (enabled via --serve-artifacts)
 SERVE_ARTIFACTS_ENV_VAR = "_MLFLOW_SERVER_SERVE_ARTIFACTS"

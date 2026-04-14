@@ -43,6 +43,11 @@ class TraceTagKey:
     # Structure: [{"name": "prompt_name", "version": "version"}]
     LINKED_PROMPTS = "mlflow.linkedPrompts"
 
+    # Archival policy tags (experiment-level, set via CLI or Python API)
+    ARCHIVAL_RETENTION = "mlflow.trace.archivalRetention"
+    ARCHIVE_NOW = "mlflow.trace.archiveNow"
+    ARCHIVAL_FAILURE = "mlflow.trace.archivalFailure"
+
 
 class TokenUsageKey:
     """Key for the token usage information in the `mlflow.chat.tokenUsage` span attribute."""
@@ -192,6 +197,7 @@ GET_TRACE_V4_RETRY_TIMEOUT_SECONDS = 15
 class SpansLocation(str, Enum):
     TRACKING_STORE = "TRACKING_STORE"
     ARTIFACT_REPO = "ARTIFACT_REPO"
+    ARCHIVE_REPO = "ARCHIVE_REPO"
 
 
 # Path to the notebook trace renderer directory
