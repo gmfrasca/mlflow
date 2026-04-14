@@ -29,6 +29,7 @@ from mlflow.environment_variables import (
     MLFLOW_WORKSPACE_STORE_URI,
 )
 from mlflow.exceptions import InvalidUrlException, MlflowException
+from mlflow.tracing.archival_duration import parse_duration
 from mlflow.protos.databricks_pb2 import INVALID_PARAMETER_VALUE, RESOURCE_DOES_NOT_EXIST, ErrorCode
 from mlflow.store.artifact.artifact_repository_registry import get_artifact_repository
 from mlflow.store.tracking import (
@@ -510,6 +511,26 @@ def _validate_static_prefix(ctx, param, value):
     help="Enable backwards compatible workspaces mode for logical isolation of experiments, "
     + "registered models, and prompts.",
 )
+@click.option(
+    "--trace-archival-location",
+    envvar="MLFLOW_TRACE_ARCHIVAL_LOCATION",
+    metavar="URI",
+    default=None,
+    help="Destination URI for archived trace span data (e.g. 's3://mlflow-traces/'). "
+    "Supports the same backends as artifact storage. "
+    "Can be overridden per workspace. "
+    "If not specified, the server's effective artifact storage location is used.",
+)
+@click.option(
+    "--trace-archival-retention",
+    envvar="MLFLOW_TRACE_ARCHIVAL_RETENTION",
+    metavar="DURATION",
+    default=None,
+    help="Server-level default trace archival retention as <number><unit> "
+    "where unit is m (minutes), h (hours), or d (days). "
+    "Traces older than this are eligible for archival by the server-owned scheduler. "
+    "Example: '30d'. When unset, no automatic archival occurs.",
+)
 def server(
     ctx,
     backend_store_uri,
@@ -536,6 +557,8 @@ def server(
     secrets_cache_max_size,
     workspace_store_uri,
     enable_workspaces,
+    trace_archival_location,
+    trace_archival_retention,
 ):
     """
     Run the MLflow tracking server with built-in security middleware.
@@ -604,6 +627,11 @@ def server(
             "Use --enable-workspaces to activate workspace mode.",
             err=True,
         )
+
+    if trace_archival_retention:
+        # Attempt to parse the duration; this will fail fast by raising an exception if the
+        # duration is invalid; the raw string is passed to workers via env var.
+        parse_duration(trace_archival_retention)
 
     if disable_security_middleware:
         os.environ["MLFLOW_SERVER_DISABLE_SECURITY_MIDDLEWARE"] = "true"
@@ -701,6 +729,8 @@ def server(
             env_file=env_file,
             secrets_cache_ttl=secrets_cache_ttl,
             secrets_cache_max_size=secrets_cache_max_size,
+            trace_archival_location=trace_archival_location,
+            trace_archival_retention=trace_archival_retention,
         )
     except ShellCommandException:
         eprint("Running the mlflow server failed. Please see the logs above for details.")

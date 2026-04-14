@@ -36,6 +36,8 @@ from mlflow.server.constants import (
     SECRETS_CACHE_MAX_SIZE_ENV_VAR,
     SECRETS_CACHE_TTL_ENV_VAR,
     SERVE_ARTIFACTS_ENV_VAR,
+    TRACE_ARCHIVAL_LOCATION_ENV_VAR,
+    TRACE_ARCHIVAL_RETENTION_ENV_VAR,
 )
 from mlflow.server.handlers import (
     STATIC_PREFIX_ENV_VAR,
@@ -343,6 +345,8 @@ def _run_server(
     env_file=None,
     secrets_cache_ttl=None,
     secrets_cache_max_size=None,
+    trace_archival_location=None,
+    trace_archival_retention=None,
 ):
     """
     Run the MLflow server, wrapping it in gunicorn, uvicorn, or waitress on windows
@@ -378,6 +382,11 @@ def _run_server(
         env_map[SECRETS_CACHE_TTL_ENV_VAR] = str(secrets_cache_ttl)
     if secrets_cache_max_size is not None:
         env_map[SECRETS_CACHE_MAX_SIZE_ENV_VAR] = str(secrets_cache_max_size)
+
+    if trace_archival_location:
+        env_map[TRACE_ARCHIVAL_LOCATION_ENV_VAR] = trace_archival_location
+    if trace_archival_retention:
+        env_map[TRACE_ARCHIVAL_RETENTION_ENV_VAR] = trace_archival_retention
 
     if secret_key := MLFLOW_FLASK_SERVER_SECRET_KEY.get():
         env_map[MLFLOW_FLASK_SERVER_SECRET_KEY.name] = secret_key
