@@ -5,8 +5,11 @@ import click
 
 import mlflow
 from mlflow.entities import ViewType
+from mlflow.entities.experiment_tag import ExperimentTag
 from mlflow.exceptions import MlflowException
 from mlflow.protos import databricks_pb2
+from mlflow.tracing.archival_duration import parse_duration
+from mlflow.tracing.constant import TraceTagKey
 from mlflow.tracking import _get_store, fluent
 from mlflow.utils.data_utils import is_uri
 from mlflow.utils.string_utils import _create_table
@@ -40,7 +43,15 @@ def commands():
     "more info on the properties of artifact location. "
     "If no location is provided, the tracking server will pick a default.",
 )
-def create(experiment_name, artifact_location):
+@click.option(
+    "--trace-archival-retention",
+    default=None,
+    metavar="DURATION",
+    help="Trace archival retention as <number><unit> where unit is m, h, or d. "
+    "Configures how long traces remain in the database before the server-owned "
+    "archival scheduler archives them. Example: '30d'.",
+)
+def create(experiment_name, artifact_location, trace_archival_retention):
     """
     Create an experiment.
 
@@ -53,6 +64,12 @@ def create(experiment_name, artifact_location):
     """
     store = _get_store()
     exp_id = store.create_experiment(experiment_name, artifact_location)
+
+    if trace_archival_retention:
+        duration = parse_duration(trace_archival_retention)
+        tag_value = json.dumps({"type": "duration", "value": str(duration)})
+        store.set_experiment_tag(exp_id, ExperimentTag(TraceTagKey.ARCHIVAL_RETENTION, tag_value))
+
     click.echo(f"Created experiment '{experiment_name}' with id {exp_id}")
 
 
@@ -224,6 +241,83 @@ def rename_experiment(experiment_id, new_name):
     store = _get_store()
     store.rename_experiment(experiment_id, new_name)
     click.echo(f"Experiment with id {experiment_id} has been renamed to '{new_name}'.")
+
+
+@commands.command("update")
+@EXPERIMENT_ID
+@click.option(
+    "--trace-archival-retention",
+    default=None,
+    metavar="DURATION",
+    help="Trace archival retention as <number><unit> where unit is m, h, or d. "
+    "Configures how long traces remain in the database before the server-owned "
+    "archival scheduler archives them. Example: '30d'.",
+)
+@click.option(
+    "--trace-archive-now",
+    is_flag=True,
+    default=False,
+    help="Request that the server archive all eligible traces in this experiment "
+    "on the next scheduler pass. Does not execute archival directly.",
+)
+@click.option(
+    "--trace-archive-now-older-than",
+    default=None,
+    metavar="DURATION",
+    help="Request that the server archive traces older than the given duration "
+    "in this experiment on the next scheduler pass. "
+    "Format: <number><unit> where unit is m, h, or d. Example: '1d'.",
+)
+def update_experiment(
+    experiment_id,
+    trace_archival_retention,
+    trace_archive_now,
+    trace_archive_now_older_than,
+):
+    """
+    Update experiment settings.
+
+    Trace archival flags configure server-owned archival behavior; they do not
+    execute archival directly.
+    """
+    if trace_archive_now and trace_archive_now_older_than:
+        raise click.UsageError(
+            "--trace-archive-now and --trace-archive-now-older-than are mutually exclusive."
+        )
+
+    if not any([trace_archival_retention, trace_archive_now, trace_archive_now_older_than]):
+        raise click.UsageError(
+            "At least one update flag is required "
+            "(--trace-archival-retention, --trace-archive-now, "
+            "or --trace-archive-now-older-than)."
+        )
+
+    store = _get_store()
+
+    if trace_archival_retention:
+        duration = parse_duration(trace_archival_retention)
+        tag_value = json.dumps({"type": "duration", "value": str(duration)})
+        store.set_experiment_tag(
+            experiment_id, ExperimentTag(TraceTagKey.ARCHIVAL_RETENTION, tag_value)
+        )
+        click.echo(f"Set trace archival retention to '{duration}' on experiment {experiment_id}.")
+
+    if trace_archive_now:
+        store.set_experiment_tag(
+            experiment_id, ExperimentTag(TraceTagKey.ARCHIVE_NOW, "{}")
+        )
+        click.echo(f"Marked experiment {experiment_id} for priority archival on next pass.")
+
+    if trace_archive_now_older_than:
+        duration = parse_duration(trace_archive_now_older_than)
+        tag_value = json.dumps({"older_than": str(duration)})
+        store.set_experiment_tag(
+            experiment_id, ExperimentTag(TraceTagKey.ARCHIVE_NOW, tag_value)
+        )
+        click.echo(
+            f"Marked experiment {experiment_id} for priority archival "
+            f"of traces older than '{duration}' on next pass."
+        )
 
 
 @commands.command("csv")
